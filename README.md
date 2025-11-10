@@ -33,11 +33,12 @@ This project performs **portfolio construction, rolling window backtesting, and 
 - Python 3.x
 - Required libraries:
   ```bash
-  pip install pandas numpy matplotlib scipy
+    pip install pandas numpy matplotlib scipy
   ```
 
 ### Running the Code
 
-## Run the main script:
-
-- python3 main.py
+- Run the main script:
+  ```bash
+  python3 main.py
+  ```
