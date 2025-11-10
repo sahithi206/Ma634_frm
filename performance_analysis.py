@@ -82,41 +82,44 @@ def plot_cum_returns(results_df, save_path=None):
 
 """Plot VaR vs Realized returns"""
 def plot_portfolio_var_backtest(var_results, save_path=None):
-    fig, axes = plt.subplots(2, 2, figsize=(14, 10))
-    axes = axes.flatten()
+    portfolios = ['GMV', 'MV', 'EW', 'Active', 'NIFTY50']
     
-    portfolios = ['GMV', 'MV', 'EW', 'Active']
+    # 3x2 grid for 5 portfolios
+    fig, axes = plt.subplots(3, 2, figsize=(16, 12))
+    axes = axes.flatten()
     
     for idx, portfolio in enumerate(portfolios):
         ax = axes[idx]
 
-        # Plot as negative
-        var_values = -np.array(var_results[portfolio]['var']) 
+        var_values = -np.array(var_results[portfolio]['var'])
         realized = np.array(var_results[portfolio]['realized'])
         violations = var_results[portfolio]['violations']
-        
+
         x = range(len(var_values))
-        
+
         ax.plot(x, var_values, 'r-', label='99% VaR (Negative)', linewidth=2)
         ax.plot(x, realized, 'b-', label='Realized Return', linewidth=1.5, alpha=0.7)
         ax.axhline(y=0, color='k', linestyle='--', alpha=0.3)
-        
+
         # Highlight violations
         violation_mask = realized < var_values
         if np.any(violation_mask):
             ax.scatter(np.array(x)[violation_mask], realized[violation_mask],
                        color='red', s=50, zorder=5, label='VaR Violation')
-        
+
         ax.set_xlabel('Window Number', fontsize=10)
         ax.set_ylabel('Return', fontsize=10)
         ax.set_title(f'{portfolio} Portfolio (Violations: {violations}/{len(var_values)})',
                      fontsize=11, fontweight='bold')
         ax.legend(loc='best', fontsize=8)
         ax.grid(True, alpha=0.3)
-    
+
+    for j in range(len(portfolios), len(axes)):
+        fig.delaxes(axes[j])
+
     plt.tight_layout()
 
     if save_path is not None:
         plt.savefig(save_path, dpi=300, bbox_inches='tight')
-    
+
     plt.show()
