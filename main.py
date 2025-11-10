@@ -74,7 +74,7 @@ def main():
     # 3. Rolling window backtest
     # -----------------------------
     print("\n3. Running rolling window backtest...")
-    results_df, var_results, windows = bt.rolling_window_backtest(stocks_df, factors_df)
+    results_df, var_results, windows = bt.perform_rolling_backtest(stocks_df, factors_df)
     
     # Save rolling returns
     rolling_returns_path = f'{RESULTS_DIR}/rolling_returns.csv'
