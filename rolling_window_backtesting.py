@@ -1,16 +1,12 @@
+#rolling window backtesting.py
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy import stats
 from scipy.optimize import minimize
 import warnings
-warnings.filterwarnings('ignore')
-
 import data_preprocessing as dp
 import portfolio_weights_calculations as pc
-# ============================================================================
-# STEP 3: ROLLING WINDOW BACKTEST
-# ============================================================================
 
 def get_window_data(returns_df, factors_df, start_date, end_date):
     """Extract data for a specific window"""
@@ -39,9 +35,9 @@ def calculate_holding_return(returns_df, weights, stock_names, start_date, end_d
     - Compounding follows: R_{0,T} = prod(1 + R_t) - 1
     """
     window_returns, _ = get_window_data(returns_df, None, start_date, end_date)
-    
-    if weights is None:  # Market portfolio (NIFTY 50)
-        portfolio_returns = window_returns['NIFTY 50'].values
+
+    if weights is None:  # Market portfolio (NIFTY Index)
+        portfolio_returns = window_returns['NIFTY Index'].values
     else:
         # Portfolio returns each day: R_p,t = sum(w_i * R_i,t)
         stock_returns = window_returns[stock_names].values
@@ -54,7 +50,7 @@ def calculate_holding_return(returns_df, weights, stock_names, start_date, end_d
 
 def rolling_window_backtest(stocks_df, factors_df):
     """Perform rolling window backtest"""
-    returns_df = dp.calculate_returns(stocks_df)
+    returns_df = dp.compute_returns(stocks_df)
     
     # Define windows
     windows = []
@@ -111,9 +107,8 @@ def rolling_window_backtest(stocks_df, factors_df):
             returns_df, factors_df,
             window['formation_start'], window['formation_end']
         )
-        
-        # Get stock names (exclude Date and NIFTY 50)
-        stock_names = [col for col in formation_returns.columns if col not in ['Date', 'NIFTY 50']]
+        # Get stock names (exclude Date and NIFTY Index)
+        stock_names = [col for col in formation_returns.columns if col not in ['Date', 'NIFTY Index']]
         
         # Remove stocks with missing data in formation period
         valid_stocks = []
@@ -140,9 +135,9 @@ def rolling_window_backtest(stocks_df, factors_df):
         rf_avg = formation_factors['RF'].mean()
         
         # Construct portfolios
-        w_gmv = pc.construct_gmv_portfolio(mu, Sigma)
-        w_mv = pc.construct_tangency_portfolio(mu, Sigma, rf_avg)
-        w_ew = pc.construct_ew_portfolio(N)
+        w_gmv = pc.gmv_weights(Sigma)
+        w_mv = pc.tangency_weights(mu, Sigma, rf_avg)
+        w_ew = pc.equal_weights(N)
         w_active, active_stocks = pc.construct_active_portfolio(
             formation_returns, formation_factors, stock_names
         )
@@ -192,8 +187,8 @@ def rolling_window_backtest(stocks_df, factors_df):
             
             # Historical simulation: use formation period to estimate VaR
             # Portfolio returns are computed using formation period weights
-            if weights is None:  # Market portfolio (NIFTY 50)
-                daily_returns = formation_returns['NIFTY 50'].values
+            if weights is None:  # Market portfolio (NIFTY Index)
+                daily_returns = formation_returns['NIFTY Index'].values
             else:
                 stock_rets = formation_returns[stocks].values
                 daily_returns = stock_rets @ weights  # Portfolio daily returns
