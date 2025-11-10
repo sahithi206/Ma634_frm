@@ -40,8 +40,8 @@ def calculate_holding_return(returns_df, weights, stock_names, start_date, end_d
     """
     window_returns, _ = get_window_data(returns_df, None, start_date, end_date)
     
-    if weights is None:  # Market portfolio (NIFTY 50)
-        portfolio_returns = window_returns['NIFTY 50'].values
+    if weights is None:  # Market portfolio (NIFTY Index)
+        portfolio_returns = window_returns['NIFTY Index'].values
     else:
         # Portfolio returns each day: R_p,t = sum(w_i * R_i,t)
         stock_returns = window_returns[stock_names].values
@@ -54,7 +54,7 @@ def calculate_holding_return(returns_df, weights, stock_names, start_date, end_d
 
 def rolling_window_backtest(stocks_df, factors_df):
     """Perform rolling window backtest"""
-    returns_df = dp.calculate_returns(stocks_df)
+    returns_df = dp.compute_returns(stocks_df)
     
     # Define windows
     windows = []
@@ -112,8 +112,8 @@ def rolling_window_backtest(stocks_df, factors_df):
             window['formation_start'], window['formation_end']
         )
         
-        # Get stock names (exclude Date and NIFTY 50)
-        stock_names = [col for col in formation_returns.columns if col not in ['Date', 'NIFTY 50']]
+        # Get stock names (exclude Date and NIFTY Index)
+        stock_names = [col for col in formation_returns.columns if col not in ['Date', 'NIFTY Index']]
         
         # Remove stocks with missing data in formation period
         valid_stocks = []
@@ -192,8 +192,8 @@ def rolling_window_backtest(stocks_df, factors_df):
             
             # Historical simulation: use formation period to estimate VaR
             # Portfolio returns are computed using formation period weights
-            if weights is None:  # Market portfolio (NIFTY 50)
-                daily_returns = formation_returns['NIFTY 50'].values
+            if weights is None:  # Market portfolio (NIFTY Index)
+                daily_returns = formation_returns['NIFTY Index'].values
             else:
                 stock_rets = formation_returns[stocks].values
                 daily_returns = stock_rets @ weights  # Portfolio daily returns

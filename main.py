@@ -23,9 +23,9 @@ def main():
     # 1. Load and preprocess data
     # -----------------------------
     print("\n1. Loading and preprocessing data...")
-    stocks_df, factors_df = dp.load_and_match_dates('Stocks_data.csv', 
+    stocks_df, factors_df = dp.load_and_preprocess_dates('Stocks_data.csv', 
                                                     'market_Factor_risk_Free.csv')
-    stocks_df = dp.remove_incomplete_stocks(stocks_df)
+    stocks_df = dp.remove_nan_cols(stocks_df)
     print(f"Number of stocks after filtering: {len(stocks_df.columns) - 2}")  # Exclude Date and NIFTY 50
     
     # Save cleaned data
@@ -86,7 +86,7 @@ def main():
     # -----------------------------
     print("\n4. Calculating performance metrics...")
     rf_rate_annual = 0.05  # 5% annual risk-free rate
-    performance = pm.calculate_performance_metrics(results_df, rf_rate=rf_rate_annual)
+    performance = pm.compute_performance_stats(results_df, rf_rate=rf_rate_annual)
     performance_path = 'results/performance_metrics.csv'
     performance.to_csv(performance_path, index=False)
     print("Performance metrics saved to '{performance_path}'")
@@ -96,10 +96,10 @@ def main():
     # 5. Plots
     # -----------------------------
     print("\n5. Generating cumulative returns plot...")
-    pm.plot_cumulative_returns(results_df, save_path='results/cumulative_returns.png')
+    pm.plot_cum_returns(results_df, save_path='results/cumulative_returns.png')
     
     print("\n6. Generating VaR backtest plot...")
-    pm.plot_var_backtest(var_results, save_path='results/var_backtest.png')
+    pm.plot_portfolio_var_backtest(var_results, save_path='results/var_backtest.png')
     
     # -----------------------------
     # 6. VaR violation summary
