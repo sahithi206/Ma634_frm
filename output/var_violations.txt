@@ -1,4 +1,0 @@
-GMV: 9 violations
-MV: 8 violations
-EW: 8 violations
-Active: 9 violations
