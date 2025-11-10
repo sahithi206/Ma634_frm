@@ -21,7 +21,7 @@ def load_and_preprocess_dates(stocks_file, factors_file):
     # Find common dates
     common_dates = sorted(set(factors_df['Date']).intersection(set(prices_df['Date'])))
     print(f"Total common trading dates found: {len(common_dates)}")
-    print(f"Date Range: {common_dates[0].date()} to {common_dates[-1].date()}")
+    
     # Filter to common dates
     prices_df = prices_df[prices_df['Date'].isin(common_dates)].sort_values('Date').reset_index(drop=True)
     factors_df = factors_df[factors_df['Date'].isin(common_dates)].sort_values('Date').reset_index(drop=True)
@@ -37,11 +37,21 @@ def compute_returns(prices_df):
     returns = returns.iloc[1:]
     return returns
 
-def remove_nan_cols(prices_df, threshold=0.95):
+def remove_nan_cols(prices_df, threshold=0.95, keep_cols=None):
     """
-    Remove columns with a high percentage of NaN values.
+    Remove stock columns with NaN percentage > (1 - threshold).
+    keep_cols = columns to always keep (e.g., ['NIFTY Index'])
     """
-    price_cols=prices_df.columns[1:]
-    not_nan_cols=prices_df[price_cols].notna().mean()
-    valid_cols=[col for col in price_cols if col in ["NIFTY Index"] or not_nan_cols[col]>=threshold]
-    return prices_df[["Date"]+valid_cols]
+    if keep_cols is None:
+        keep_cols = []
+
+    price_cols = prices_df.columns[1:]
+    not_nan_ratio = prices_df[price_cols].notna().mean()
+    valid_cols = [
+        col for col in price_cols
+        if col in keep_cols or not_nan_ratio[col] >= threshold
+    ]
+
+    return prices_df[['Date'] + valid_cols]
+
+

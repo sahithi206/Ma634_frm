@@ -1,3 +1,4 @@
+#rolling window backtesting.py
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -96,10 +97,10 @@ def perform_rolling_backtest(stocks_df, factors_df):
         
         rf_avg = formation_factors['RF'].mean()
         
-        # Portfolio weights
-        w_gmv = pc.construct_gmv_portfolio(mu, Sigma)
-        w_mv = pc.construct_tangency_portfolio(mu, Sigma, rf_avg)
-        w_ew = pc.construct_ew_portfolio(N)
+        # Construct portfolios
+        w_gmv = pc.gmv_weights(Sigma)
+        w_mv = pc.tangency_weights(mu, Sigma, rf_avg)
+        w_ew = pc.equal_weights(N)
         w_active, active_stocks = pc.construct_active_portfolio(
             formation_returns, formation_factors, stock_names
         )
