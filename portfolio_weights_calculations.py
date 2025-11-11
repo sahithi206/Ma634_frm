@@ -1,18 +1,13 @@
-import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
 from scipy import stats
-from scipy.optimize import minimize
 import warnings
 warnings.filterwarnings('ignore')
 
-# ============================================================================
-# STEP 2: PORTFOLIO CONSTRUCTION FUNCTIONS
-# ============================================================================
+# PORTFOLIO CONSTRUCTION FUNCTIONS
 
 def gmv_weights(cov):
     
-    "Global Minimum Variance(Risk is Minimized and risk here refers to variance)"
+    "Global Minimum Variance (Risk is Minimized and risk here refers to variance)"
 
     inv = np.linalg.inv(cov) #inv=cov^(-1)
     ones = np.ones((inv.shape[0], 1)) #e=ones
@@ -23,28 +18,21 @@ def gmv_weights(cov):
     return w
 
 def tangency_weights(mu, cov, rf):
+    """Tangency Portfolio: Maximizes Sharpe Ratio."""
 
     mu = mu.reshape(-1, 1)
-    inv = np.linalg.inv(cov)
-
-    # Excess Return Vector: (mu - rf*e)
-    ones = np.ones((inv.shape[0], 1))
     
-    """Tangency Portfolio: Maximizes Sharpe Ratio.
-       Formula w = inv*(m-rf) / ones'cov^(-1)(m-rf) 
-    """
     N = len(mu)
-    ones = np.ones(N)
+    ones = np.ones((N, 1))
     
-    # Excess returns
-    excess = mu - rf
+    # Excess returns: (mu - rf*e)
+    excess = mu - (rf * ones) 
     inv = np.linalg.inv(cov) # inv=cov^(-1)   
 
     # w = inv * (mu - rf*e) / (ones' * inv * (mu - rf*e))
-
-    w = inv @ excess / (ones @ inv @ excess)
+    w = inv @ excess / (ones.T @ inv @ excess)
     
-    return w
+    return w.flatten()
 
 def equal_weights(N):
     """Equal-Weighted portfolio
@@ -54,22 +42,10 @@ def equal_weights(N):
 
 def construct_active_portfolio(returns_df, factors_df, stock_names, confidence=0.95):
     """
-    Build an active portfolio based on CAPM alpha significance.
-
-    Steps (as required):
-    1. Estimate CAPM for each stock: (Ri - Rf) = alpha + beta * MF + error
-    2. Test alpha significance using 95% confidence (p-value < 0.05)
-    3. Keep only stocks with significant alphas
-    4. Assign Treynor-Black weights: wi ∝ alpha_i / residual_variance_i
-    5. If none pass the test → return market-only portfolio
+    Build an active portfolio based on CAPM alpha significance (Treynor-Black).
     """
 
-    import numpy as np
-    from scipy import stats
-
-    # ----------------------------
     # Align dates between returns and factors
-    # ----------------------------
     merged_dates = set(returns_df['Date']).intersection(set(factors_df['Date']))
     returns_sorted = returns_df[returns_df['Date'].isin(merged_dates)].sort_values("Date").reset_index(drop=True)
     factors_sorted = factors_df[factors_df['Date'].isin(merged_dates)].sort_values("Date").reset_index(drop=True)
@@ -79,15 +55,15 @@ def construct_active_portfolio(returns_df, factors_df, stock_names, confidence=0
     risk_free = factors_sorted['RF'].values
 
     chosen_alphas = []
-    chosen_betas = []
     chosen_stocks = []
     chosen_resvars = []
+    
+    # Use the unified index name
+    market_index_name = 'NIFTY Index'
 
-    # ----------------------------
     # Run CAPM for each stock
-    # ----------------------------
     for asset in stock_names:
-        if asset == "NIFTY Index":
+        if asset == market_index_name:
             continue
 
         asset_ret = returns_sorted[asset].values
@@ -104,7 +80,7 @@ def construct_active_portfolio(returns_df, factors_df, stock_names, confidence=0
         # CAPM regression: y = alpha + beta*x + err
         X = np.column_stack([np.ones(len(x)), x])
         coef = np.linalg.lstsq(X, y, rcond=None)[0]
-        alpha_est, beta_est = coef
+        alpha_est = coef[0]
 
         # Residuals and variance
         residual = y - X @ coef
@@ -123,13 +99,10 @@ def construct_active_portfolio(returns_df, factors_df, stock_names, confidence=0
         if p_alpha < (1 - confidence):
             chosen_stocks.append(asset)
             chosen_alphas.append(alpha_est)
-            chosen_betas.append(beta_est)
             chosen_resvars.append(res_var)
 
-    # No significant alphas then market-only
     if len(chosen_stocks) == 0:
-        print("  No significant alphas found. Using market portfolio.")
-        return None, None
+        return None, None 
 
     # Treynor–Black active portfolio : w_i ∝ alpha_i / residual_var_i
     alphas = np.array(chosen_alphas)
@@ -137,7 +110,7 @@ def construct_active_portfolio(returns_df, factors_df, stock_names, confidence=0
 
     raw_w = alphas / resvars
 
-    # Normalize using absolute sum for stability
+    # Normalize using absolute sum
     weights = raw_w / np.sum(np.abs(raw_w))
 
     return weights, chosen_stocks
